@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:slack="http://www.mulesoft.org/schema/mule/slack" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/slack http://www.mulesoft.org/schema/mule/slack/current/mule-slack.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<configuration doc:name="Configuration" doc:id="67343bb7-7a6f-476d-bb1b-e26479a598da" defaultErrorHandler-ref="errorError_Handler" />
+	<global-property doc:name="Global Property" doc:id="7b9f046b-7afe-46f6-9948-5ff5705d3337" name="env" value="dev" />
+	<configuration-properties doc:name="Configuration properties" doc:id="2cdc98d1-00d4-472b-a906-81ab05bb7d43" file="config/${env}-config.properties" />
+    <slack:config name="Slack_Config" doc:name="Slack Config" doc:id="95a5df82-2527-4658-8fff-cc820f582b21" >
+		<slack:token-connection token="${slack.token}"/>
+	</slack:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="efb5647b-14b0-4c38-afe9-c47537ab82fe" >
+		<http:listener-connection host="${https.host}" port="${https.port}" protocol="HTTPS" tlsContext="TLS_Context"/>
+	</http:listener-config>
+    <tls:context name="TLS_Context" doc:name="TLS Context" doc:id="0f245cc8-0a2e-41f9-b477-5f0f411ee7d2" >
+		<tls:trust-store insecure="true" />
+		<tls:key-store type="jks" path="${tls.keystore.path}" alias="${tls.keystore.alias}" keyPassword="${tls.key_password}" password="${tls.password}" />
+	</tls:context>
+	<api-gateway:autodiscovery apiId="16882045" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="d7e37ecb-0ee7-4c7e-b396-34958023a52b" flowRef="slack-api-main" />
+</mule>

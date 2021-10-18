@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:slack="http://www.mulesoft.org/schema/mule/slack"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/slack http://www.mulesoft.org/schema/mule/slack/current/mule-slack.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="messageFlow" doc:id="fc337884-b220-4671-8301-32059110251b" >
+		<logger level="INFO" message="Got Slack request" doc:name="Log request"/>
+		<set-variable value="#[payload]" doc:name="Save payload" doc:id="0e15d500-4313-4fb3-8080-af352f89b709" variableName="input" />
+		<slack:list-users doc:name="Get Slack user list" doc:id="857228d5-bf97-4212-9189-73171278f16e" config-ref="Slack_Config">
+			<reconnect />
+		</slack:list-users>
+		<logger level="INFO" doc:name="Log user list" doc:id="92495ff7-4de7-418e-9fd8-f06baf5f3980" message="#[output application/json --- payload]" />
+		<ee:transform doc:name="Get Slack user name for email address" doc:id="fb46b4f3-26a9-48a7-948f-054b79d8fb5e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    slackName: (payload filter ($.profile.email == vars."input".user)).profile.real_name default []
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Check if user found" doc:id="9ae3580b-6871-4c60-a5f9-7f80c79a5b19">
+			<when expression="#[sizeOf(payload.slackName) &gt; 0]">
+				<logger level="INFO" doc:name="Log posting message" doc:id="e2399b7d-877f-45bc-bd59-ccfaab0b92ac" message="Posting message" />
+				<ee:transform doc:name="Format message" doc:id="ed50225f-a71d-4315-a073-05530e448931">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+"Hi @" ++ payload.slackName[0] as String ++ " , " ++ vars."input".text]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<slack:post-message channel='#[vars."input".channel]' doc:name="Post Message" doc:id="6506e4d3-a694-4fa2-851f-3cb005bafe56" config-ref="Slack_Config" linkNames="true" parse="FULL" unfurlLinks="true" unfurlMedia="true">
+			<reconnect />
+			<slack:message><![CDATA[#[payload]]]></slack:message>
+		</slack:post-message>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Log user not found" doc:id="726c9da0-c23a-436c-aafa-c1c236319607" message="Cannot find user" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

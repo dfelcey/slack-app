@@ -1,0 +1,44 @@
+#%RAML 1.0
+title: Slack API
+
+types:
+  Message:
+    properties:
+      text: 
+        type: string
+        example: Hi there
+      channel:
+        type: string
+        example: general
+      user:
+        type: string
+        example: dan.frog@abc.com
+
+traits:
+  client-id-required:
+    headers:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+    responses:
+      401:
+        description: Unauthorized or invalid client application credentials
+      500:
+        description: Bad response from authorization server, or WSDL SOAP Fault error
+
+version: v1
+
+protocols:
+  - HTTP
+  - HTTPS
+
+/sendMessage:
+  post:
+    is: [client-id-required]
+    displayName: Sends a message
+    body:
+      application/json:
+        type: Message
+    responses:
+      202:
